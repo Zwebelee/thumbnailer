@@ -1,11 +1,13 @@
-import React, {createContext, useContext, useState, useRef} from "react";
+import React, {createContext, useContext, useRef, useState} from "react";
+import {OverlayType} from "@/utils/drawOverlay.ts";
 
 interface AppContextProps {
     image: File | null;
     setImage: (file: File | null) => void;
     imageUrl: string | null;
-    previewCanvasRef: React.RefObject<HTMLCanvasElement>;
-
+    previewCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+    overlay: OverlayType;
+    setOverlay: (overlay: OverlayType) => void;
 }
 
 const AppContext = createContext<AppContextProps | undefined>(undefined);
@@ -21,9 +23,9 @@ export const useAppContext = () => {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
     const [image, setImageState] = useState<File | null>(null);
     const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [overlay, setOverlay] = useState<OverlayType>(OverlayType.NONE);
     const prevUrl = useRef<string | null>(null);
     const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
-
 
     const setImage = (file: File | null) => {
         setImageState(file);
@@ -46,7 +48,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({children})
             image,
             imageUrl,
             setImage,
-            previewCanvasRef
+            previewCanvasRef,
+            overlay,
+            setOverlay
         }}>
             {children}
         </AppContext.Provider>

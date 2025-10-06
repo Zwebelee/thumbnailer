@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useAppContext } from "@/context/AppContext.tsx";
+import {drawOverlay} from "@/utils/drawOverlay.ts";
+
 
 const CANVAS_SIZE = 400;
 
@@ -8,7 +10,7 @@ type Transform = { scale: number; tx: number; ty: number };
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
 export const ImagePreview = () => {
-    const { imageUrl, previewCanvasRef } = useAppContext();
+    const { imageUrl, previewCanvasRef, overlay } = useAppContext();
     const imgRef = useRef<HTMLImageElement | null>(null);
 
     // Transform state in refs for performance
@@ -76,7 +78,10 @@ export const ImagePreview = () => {
         ctx.strokeStyle = "rgba(0,0,0,0.35)";
         ctx.lineWidth = 1;
         ctx.strokeRect(0.5, 0.5, CANVAS_SIZE - 1, CANVAS_SIZE - 1);
-    }, []);
+
+        drawOverlay(ctx, overlay);
+
+    }, [overlay]);
 
     // Redraw on zoom change
     useEffect(() => {

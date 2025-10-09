@@ -8,6 +8,8 @@ interface AppContextProps {
     previewCanvasRef: React.RefObject<HTMLCanvasElement | null>;
     overlay: OverlayType;
     setOverlay: (overlay: OverlayType) => void;
+    originalImageRef: React.RefObject<HTMLImageElement | HTMLCanvasElement | null>;
+
 }
 
 const AppContext = createContext<AppContextProps | undefined>(undefined);
@@ -27,6 +29,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({children})
     const prevUrl = useRef<string | null>(null);
     const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
+    const originalImageRef = useRef<HTMLImageElement | HTMLCanvasElement | null>(null);
+
+
     const setImage = (file: File | null) => {
         setImageState(file);
         if (prevUrl.current) {
@@ -39,6 +44,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({children})
             prevUrl.current = url;
         } else {
             setImageUrl(null);
+            originalImageRef.current = null;
         }
     };
 
@@ -50,7 +56,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({children})
             setImage,
             previewCanvasRef,
             overlay,
-            setOverlay
+            setOverlay,
+            originalImageRef
         }}>
             {children}
         </AppContext.Provider>

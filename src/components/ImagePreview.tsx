@@ -10,7 +10,7 @@ type Transform = { scale: number; tx: number; ty: number };
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
 export const ImagePreview = () => {
-    const { imageUrl, previewCanvasRef, overlay } = useAppContext();
+    const { imageUrl, previewCanvasRef, overlay, originalImageRef } = useAppContext();
     const imgRef = useRef<HTMLImageElement | null>(null);
 
     // Transform state in refs for performance
@@ -28,12 +28,14 @@ export const ImagePreview = () => {
     useEffect(() => {
         if (!imageUrl) {
             imgRef.current = null;
+            if (originalImageRef) originalImageRef.current = null;
             draw();
             return;
         }
         const img = new window.Image();
         img.onload = () => {
             imgRef.current = img;
+            if (originalImageRef) originalImageRef.current = img;
             const iw = img.width;
             const ih = img.height;
             const minScale = Math.max(CANVAS_SIZE / iw, CANVAS_SIZE / ih);

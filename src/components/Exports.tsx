@@ -13,22 +13,118 @@ import React, {useState} from "react";
 import {Label} from "@/components/ui/label.tsx";
 import {Switch} from "@/components/ui/switch.tsx";
 import {Settings} from "lucide-react";
+import {drawOverlay, OverlayType} from "@/utils/drawOverlay.ts";
+
+const overlayNames: Record<string, string> = {
+    a: "original",
+    b: OverlayType.NONE,
+    c: OverlayType.APP,
+    d: OverlayType.MAINTENANCE,
+    e: OverlayType.EDIT
+};
+
+
 
 export const Exports = () => {
-    const {previewCanvasRef} = useAppContext();
+    const {previewCanvasRef, originalImageRef} = useAppContext();
     const [filename, setFilename] = useState(`thumbnail`);
     const [filetype, setFiletype] = useState<"png" | "jpg">("jpg");
     const [hastimestamp, sethasTimestamp] = useState<boolean>(true);
+    const [selectedOverlays, setSelectedOverlays] = useState<string[]>(["a", "c", "d"]);
 
-    const handleDownload = () => {
+
+    const handleDownload = async(bulk: boolean = false) => {
         const canvas = previewCanvasRef.current;
         if (!canvas) return;
         const mimeType = filetype === "jpg" ? "image/jpeg" : "image/png";
-
         let finalFilename = filename;
+
+        const downloadBlob = (blob: Blob, name: string) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = name;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        const timestampSuffix = hastimestamp ? `_${getLocalTimestamp()}` : "";
+
+        const elementToBlob = async (el: HTMLImageElement | HTMLCanvasElement): Promise<Blob | null> => {
+            const tmp = document.createElement("canvas");
+            if (el instanceof HTMLImageElement) {
+                // wait if image not yet loaded
+                if (!el.complete) await new Promise((res) => { el.onload = res; el.onerror = res; });
+                tmp.width = el.naturalWidth || el.width;
+                tmp.height = el.naturalHeight || el.height;
+                const tctx = tmp.getContext("2d");
+                if (!tctx) return null;
+                tctx.drawImage(el, 0, 0, tmp.width, tmp.height);
+            } else {
+                tmp.width = el.width;
+                tmp.height = el.height;
+                const tctx = tmp.getContext("2d");
+                if (!tctx) return null;
+                tctx.drawImage(el, 0, 0);
+            }
+            return await new Promise<Blob | null>((res) => tmp.toBlob((b) => res(b), mimeType));
+        };
+
+
+
+        if (bulk) {
+            for (const key of selectedOverlays) {
+                const overlayTypeStr = overlayNames[key];
+                if (!overlayTypeStr) continue;
+
+                // special-case "original": export the uploaded image (originalImageRef) not the preview canvas
+                if (overlayTypeStr === "original") {
+                    const origEl = originalImageRef?.current as (HTMLImageElement | HTMLCanvasElement | null) ?? null;
+                    if (origEl) {
+                        const blob = await elementToBlob(origEl);
+                        if (blob) {
+                            const safeName = `${filename}_original${timestampSuffix}.${filetype}`;
+                            downloadBlob(blob, safeName);
+                        }
+                    } else {
+                        // fallback: export the preview canvas if original not available
+                        const off = document.createElement("canvas");
+                        off.width = canvas.width;
+                        off.height = canvas.height;
+                        const ctx = off.getContext("2d");
+                        if (!ctx) continue;
+                        ctx.drawImage(canvas, 0, 0);
+                        const blob = await new Promise<Blob | null>((res) => off.toBlob((b) => res(b), mimeType));
+                        if (blob) {
+                            const safeName = `${filename}_original${timestampSuffix}.${filetype}`;
+                            downloadBlob(blob, safeName);
+                        }
+                    }
+                    continue;
+                }
+
+                // non-original entries: clone preview canvas and draw overlay
+                const overlayType = overlayTypeStr as OverlayType;
+                const off = document.createElement("canvas");
+                off.width = canvas.width;
+                off.height = canvas.height;
+                const ctx = off.getContext("2d");
+                if (!ctx) continue;
+                ctx.drawImage(canvas, 0, 0);
+
+                await drawOverlay(ctx, overlayType);
+
+                const blob = await new Promise<Blob | null>((res) => off.toBlob((b) => res(b), mimeType));
+                if (blob) {
+                    const safeName = `${filename}_${overlayType}${timestampSuffix}.${filetype}`;
+                    downloadBlob(blob, safeName);
+                }
+            }
+            return;
+        }
+
         if (hastimestamp) {
-            const timestamp = getLocalTimestamp()
-            finalFilename += `_${timestamp}`;
+            finalFilename += `${timestampSuffix}`;
         }
 
         canvas.toBlob((blob) => {
@@ -65,10 +161,15 @@ export const Exports = () => {
                 setFiletype={setFiletype}
                 hastimestamp={hastimestamp}
                 sethasTimestamp={sethasTimestamp}
+                selectedOverlays={selectedOverlays}
+                setSelectedOverlays={setSelectedOverlays}
+                onBulkExport={() => handleDownload(true)}
+
+
             />
             <Button
                 className="px-4 py-2 rounded cursor-pointer"
-                onClick={handleDownload}
+                onClick={() => handleDownload(false)}
                 type="button"
                 disabled={!previewCanvasRef.current}
             >
@@ -104,6 +205,9 @@ interface ExportSettingsMenuProps {
     setFiletype: (type: "png" | "jpg") => void;
     hastimestamp: boolean;
     sethasTimestamp: (val: boolean) => void;
+    selectedOverlays?: string[];
+    setSelectedOverlays?: (val: string[]) => void;
+    onBulkExport?: () => void;
 }
 
 export const ExportSettingsMenu = (
@@ -111,7 +215,10 @@ export const ExportSettingsMenu = (
         filetype,
         setFiletype,
         hastimestamp,
-        sethasTimestamp
+        sethasTimestamp,
+        selectedOverlays,
+        setSelectedOverlays,
+        onBulkExport
     }: ExportSettingsMenuProps) => {
     return (
         <DropdownMenu>
@@ -120,24 +227,6 @@ export const ExportSettingsMenu = (
             </DropdownMenuTrigger>
             <DropdownMenuContent>
                 <DropdownMenuLabel>Export Settings</DropdownMenuLabel>
-                <DropdownMenuSeparator/>
-                <ExportSettingsMenuItem
-                    label={"Bulk Export"}
-                    children={
-                        <>
-                            <ToggleGroup
-                                type="multiple"
-                                defaultValue={["a", "b", "c"]}>
-                                <ToggleGroupItem value="a">Original</ToggleGroupItem>
-                                <ToggleGroupItem value="b">App</ToggleGroupItem>
-                                <ToggleGroupItem value="c">Maintenance</ToggleGroupItem>
-                                <ToggleGroupItem value="d">Edit</ToggleGroupItem>
-                            </ToggleGroup>
-                            <Button variant={"outline"}>Export Bulk</Button>
-                        </>
-                    }
-                    layout={"col"}
-                />
                 <DropdownMenuSeparator/>
                 <ExportSettingsMenuItem
                     label={"Filetype"}
@@ -162,6 +251,27 @@ export const ExportSettingsMenu = (
                             onCheckedChange={sethasTimestamp}
                             className="cursor-pointer"
                         />}
+                />
+                <DropdownMenuSeparator/>
+                <ExportSettingsMenuItem
+                    label={"Bulk Export"}
+                    children={
+                        <>
+                            <ToggleGroup
+                                type="multiple"
+                                value={selectedOverlays}
+                                onValueChange={setSelectedOverlays}
+                            >
+                                <ToggleGroupItem className="cursor-pointer" value="a">Original</ToggleGroupItem>
+                                <ToggleGroupItem className="cursor-pointer" value="b">Blank</ToggleGroupItem>
+                                <ToggleGroupItem className="cursor-pointer" value="c">App</ToggleGroupItem>
+                                <ToggleGroupItem className="cursor-pointer" value="d">Maintenance</ToggleGroupItem>
+                                <ToggleGroupItem className="cursor-pointer" value="e">Edit</ToggleGroupItem>
+                            </ToggleGroup>
+                            <Button variant={"outline"} onClick={onBulkExport}>Export Bulk</Button>
+                        </>
+                    }
+                    layout={"col"}
                 />
             </DropdownMenuContent>
         </DropdownMenu>

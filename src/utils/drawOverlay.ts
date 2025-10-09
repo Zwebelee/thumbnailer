@@ -31,7 +31,17 @@ export const overlayOptions: OverlayOption[] = [
     {id: OverlayType.MAINTENANCE2, label: "Test Maintenance 2"},
 ];
 
-export function drawOverlay(ctx: CanvasRenderingContext2D, overlay: OverlayType) {
+function loadImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+        const img = new window.Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = (e) => reject(e);
+        img.src = src;
+    });
+}
+
+export async function drawOverlay(ctx: CanvasRenderingContext2D, overlay: OverlayType) {
     if (overlay === OverlayType.APP) {
         ctx.save();
         ctx.fillStyle = "rgba(34, 221, 202,1)";
@@ -42,9 +52,8 @@ export function drawOverlay(ctx: CanvasRenderingContext2D, overlay: OverlayType)
         ctx.closePath();
         ctx.fill();
 
-        const icon = new window.Image();
-        icon.src = IconPath.APPWINDOW;
-        icon.onload = () => {
+        try {
+            const icon = await loadImage(IconPath.APPWINDOW);
             const iconSize = 92;
             const centroidX = (0 + 180 + 0) / 3;
             const centroidY = (0 + 0 + 180) / 3;
@@ -53,7 +62,8 @@ export function drawOverlay(ctx: CanvasRenderingContext2D, overlay: OverlayType)
             ctx.rotate(-Math.PI / 4);
             ctx.drawImage(icon, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
             ctx.restore();
-        };
+        } catch {
+        }
     } else if (overlay === OverlayType.MAINTENANCE) {
         ctx.save();
         ctx.fillStyle = "rgba(227, 36, 42, 1)";
@@ -65,14 +75,15 @@ export function drawOverlay(ctx: CanvasRenderingContext2D, overlay: OverlayType)
         ctx.fill();
 
 
-        const icon = new window.Image();
-        icon.src = IconPath.SETTINGS;
-        icon.onload = () => {
+
+        try {
+            const icon = await loadImage(IconPath.SETTINGS);
             const iconSize = 92;
             ctx.save();
             ctx.drawImage(icon, 10, 10, iconSize, iconSize);
             ctx.restore();
-        };
+        } catch {
+        }
     } else if (overlay === OverlayType.EDIT) {
         ctx.save();
         ctx.fillStyle = "rgba(242, 237, 231, 1)";
@@ -84,14 +95,14 @@ export function drawOverlay(ctx: CanvasRenderingContext2D, overlay: OverlayType)
         ctx.fill();
 
 
-        const icon = new window.Image();
-        icon.src = IconPath.PENCIL;
-        icon.onload = () => {
+        try {
+            const icon = await loadImage(IconPath.PENCIL);
             const iconSize = 92;
             ctx.save();
             ctx.drawImage(icon, 10, 10, iconSize, iconSize);
             ctx.restore();
-        };
+        } catch {
+        }
     } else if (overlay === OverlayType.APP_TEXT) {
         ctx.save();
         ctx.fillStyle = "rgba(34, 221, 202,1)";
@@ -147,25 +158,25 @@ export function drawOverlay(ctx: CanvasRenderingContext2D, overlay: OverlayType)
         ctx.fillText("Betrieb", 0, 0);
         ctx.restore();
 
-        const svgPath = "/settings.svg";
-        fetch(svgPath)
-            .then(res => res.text())
-            .then(svgText => {
-                // Replace fill="none" with your desired color, e.g., fill="#e3242a"
-                const coloredSvg = svgText.replace(/fill="none"/g, 'fill="#e3242a"');
-                const svgBlob = new Blob([coloredSvg], {type: "image/svg+xml"});
-                const url = URL.createObjectURL(svgBlob);
-                const icon = new window.Image();
-                icon.src = url;
-                icon.onload = () => {
-                    const centerX = ctx.canvas.width / 2;
-                    const centerY = ctx.canvas.height / 2;
-                    const iconSize = 192;
-                    ctx.save();
-                    ctx.drawImage(icon, centerX - iconSize / 2, centerY - iconSize / 2, iconSize, iconSize);
-                    ctx.restore();
-                    URL.revokeObjectURL(url);
-                };
-            });
+        try {
+            const svgPath = "/settings.svg";
+            const res = await fetch(svgPath);
+            const svgText = await res.text();
+            const coloredSvg = svgText.replace(/fill="none"/g, 'fill="#e3242a"');
+            const svgBlob = new Blob([coloredSvg], {type: "image/svg+xml"});
+            const url = URL.createObjectURL(svgBlob);
+            try {
+                const icon = await loadImage(url);
+                const centerX = ctx.canvas.width / 2;
+                const centerY = ctx.canvas.height / 2;
+                const iconSize = 192;
+                ctx.save();
+                ctx.drawImage(icon, centerX - iconSize / 2, centerY - iconSize / 2, iconSize, iconSize);
+                ctx.restore();
+            } finally {
+                URL.revokeObjectURL(url);
+            }
+        } catch {
+        }
     }
 }

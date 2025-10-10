@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "biome": "biome check --write",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -59,6 +59,7 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.2.5",
     "@eslint/js": "^9.36.0",
     "@types/node": "^24.5.2",
     "@types/react": "^19.1.13",

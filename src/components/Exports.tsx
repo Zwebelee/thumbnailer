@@ -198,8 +198,8 @@ interface FileNameInputProps {
 
 export const FileNameInput = ({ value, onChange }: FileNameInputProps) => {
 	return (
-		<div className="grid w-full max-w-sm items-center gap-3">
-			<Label>Filename</Label>
+		<div className="flex flex-row gap-2">
+			<Label>Filename:</Label>
 			<Input
 				type="text"
 				placeholder="Filename"

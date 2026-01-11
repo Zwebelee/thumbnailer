@@ -9,12 +9,6 @@ export const OverlayType = {
 
 export type OverlayType = (typeof OverlayType)[keyof typeof OverlayType];
 
-export const IconPath = {
-	SETTINGS: "/settings.svg",
-	PENCIL: "/pencil.svg",
-	APPWINDOW: "/app-window.svg",
-} as const;
-
 export interface OverlayOption {
 	id: OverlayType;
 	label: string;
@@ -38,6 +32,23 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 		img.src = src;
 	});
 }
+
+function getAssetUrl(name: string) {
+	const asset = name.startsWith("/") ? name.slice(1) : name;
+	const base = import.meta.env.BASE_URL ?? "/";
+	const normalized = base.endsWith("/") ? base : base + "/";
+	const absoluteBase = normalized.startsWith("http")
+		? normalized
+		: window.location.origin +
+			(normalized.startsWith("/") ? normalized : "/" + normalized);
+	return new URL(asset, absoluteBase).href;
+}
+
+export const IconPath = {
+	SETTINGS: getAssetUrl("settings.svg"),
+	PENCIL: getAssetUrl("pencil.svg"),
+	APPWINDOW: getAssetUrl("app-window.svg"),
+} as const;
 
 export async function drawOverlay(
 	ctx: CanvasRenderingContext2D,

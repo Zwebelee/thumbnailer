@@ -2,6 +2,8 @@ import type React from "react";
 import { createContext, useContext, useRef, useState } from "react";
 import { OverlayType } from "@/utils/drawOverlay.ts";
 
+type CanvasSize = [number, number];
+
 interface AppContextProps {
 	image: File | null;
 	setImage: (file: File | null) => void;
@@ -12,6 +14,8 @@ interface AppContextProps {
 	originalImageRef: React.RefObject<
 		HTMLImageElement | HTMLCanvasElement | null
 	>;
+	canvasSize: CanvasSize;
+	setCanvasSize: (size: CanvasSize) => void;
 }
 
 const AppContext = createContext<AppContextProps | undefined>(undefined);
@@ -36,6 +40,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 	const originalImageRef = useRef<HTMLImageElement | HTMLCanvasElement | null>(
 		null,
 	);
+
+	const [canvasSize, setCanvasSizeState] = useState<CanvasSize>([400, 400]);
+	const setCanvasSize = (size: CanvasSize) => {
+		// basic validation: ensure positive integers
+		const w = Math.max(1, Math.floor(size[0]));
+		const h = Math.max(1, Math.floor(size[1]));
+		setCanvasSizeState([w, h]);
+	};
 
 	const setImage = (file: File | null) => {
 		setImageState(file);
@@ -63,6 +75,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 				overlay,
 				setOverlay,
 				originalImageRef,
+				canvasSize,
+				setCanvasSize,
 			}}
 		>
 			{children}

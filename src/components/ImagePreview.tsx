@@ -3,17 +3,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppContext } from "@/context/AppContext.tsx";
 import { drawOverlay } from "@/utils/drawOverlay.ts";
 
-const CANVAS_SIZE = 400;
-
 type Transform = { scale: number; tx: number; ty: number };
 
 const clamp = (v: number, min: number, max: number) =>
 	Math.max(min, Math.min(max, v));
 
 export const ImagePreview = () => {
-	const { imageUrl, previewCanvasRef, overlay, originalImageRef } =
+	const { imageUrl, previewCanvasRef, overlay, originalImageRef, canvasSize } =
 		useAppContext();
 	const imgRef = useRef<HTMLImageElement | null>(null);
+	const canvasWidth = canvasSize[0];
+	const canvasHeight = canvasSize[1];
 
 	// Transform state in refs for performance
 	const tRef = useRef<Transform>({ scale: 1, tx: 0, ty: 0 });
@@ -25,6 +25,36 @@ export const ImagePreview = () => {
 
 	// For zoom slider
 	const [zoomPct, setZoomPct] = useState(100);
+
+	const draw = useCallback(() => {
+		const canvas = previewCanvasRef.current;
+		const ctx = canvas?.getContext("2d");
+		const img = imgRef.current;
+		if (!canvas || !ctx) return;
+		ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+		// Checkerboard
+		const cell = 16;
+		for (let y = 0; y < canvasHeight; y += cell) {
+			for (let x = 0; x < canvasWidth; x += cell) {
+				ctx.fillStyle = ((x + y) / cell) % 2 === 0 ? "#f2f2f2" : "#e6e6e6";
+				ctx.fillRect(x, y, cell, cell);
+			}
+		}
+
+		if (img) {
+			const { scale, tx, ty } = tRef.current;
+			ctx.imageSmoothingEnabled = true;
+			ctx.imageSmoothingQuality = "high";
+			ctx.drawImage(img, tx, ty, img.width * scale, img.height * scale);
+		}
+
+		ctx.strokeStyle = "rgba(0,0,0,0.35)";
+		ctx.lineWidth = 1;
+		ctx.strokeRect(0.5, 0.5, canvasWidth - 1, canvasHeight - 1);
+
+		drawOverlay(ctx, overlay);
+	}, [overlay, canvasWidth, canvasHeight, previewCanvasRef]);
 
 	// Load image and initialize transform
 	useEffect(() => {
@@ -40,56 +70,27 @@ export const ImagePreview = () => {
 			if (originalImageRef) originalImageRef.current = img;
 			const iw = img.width;
 			const ih = img.height;
-			const minScale = Math.max(CANVAS_SIZE / iw, CANVAS_SIZE / ih);
+			const minScale = Math.max(canvasWidth / iw, canvasHeight / ih);
 			minScaleRef.current = minScale;
 			maxScaleRef.current = minScale * 8;
 			tRef.current = {
 				scale: minScale,
-				tx: Math.floor((CANVAS_SIZE - iw * minScale) / 2),
-				ty: Math.floor((CANVAS_SIZE - ih * minScale) / 2),
+				tx: Math.floor((canvasWidth - iw * minScale) / 2),
+				ty: Math.floor((canvasHeight - ih * minScale) / 2),
 			};
 			setZoomPct(100);
 			draw();
 		};
 		img.src = imageUrl;
 		// eslint-disable-next-line
-	}, [imageUrl]);
+	}, [imageUrl, canvasWidth, canvasHeight, originalImageRef, draw]);
 
 	// Draw function
-	const draw = useCallback(() => {
-		const canvas = previewCanvasRef.current;
-		const ctx = canvas?.getContext("2d");
-		const img = imgRef.current;
-		if (!canvas || !ctx) return;
-		ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-
-		// Checkerboard
-		const cell = 16;
-		for (let y = 0; y < CANVAS_SIZE; y += cell) {
-			for (let x = 0; x < CANVAS_SIZE; x += cell) {
-				ctx.fillStyle = ((x + y) / cell) % 2 === 0 ? "#f2f2f2" : "#e6e6e6";
-				ctx.fillRect(x, y, cell, cell);
-			}
-		}
-
-		if (img) {
-			const { scale, tx, ty } = tRef.current;
-			ctx.imageSmoothingEnabled = true;
-			ctx.imageSmoothingQuality = "high";
-			ctx.drawImage(img, tx, ty, img.width * scale, img.height * scale);
-		}
-
-		ctx.strokeStyle = "rgba(0,0,0,0.35)";
-		ctx.lineWidth = 1;
-		ctx.strokeRect(0.5, 0.5, CANVAS_SIZE - 1, CANVAS_SIZE - 1);
-
-		drawOverlay(ctx, overlay);
-	}, [overlay]);
 
 	// Redraw on zoom change
 	useEffect(() => {
 		draw();
-	}, [zoomPct, draw]);
+	}, [draw]);
 
 	// Clamp transform to keep image in bounds
 	const clampTransform = (t: Transform): Transform => {
@@ -99,9 +100,9 @@ export const ImagePreview = () => {
 		const ih = img.height;
 		const drawW = iw * t.scale;
 		const drawH = ih * t.scale;
-		const minTx = CANVAS_SIZE - drawW;
+		const minTx = canvasWidth - drawW;
 		const maxTx = 0;
-		const minTy = CANVAS_SIZE - drawH;
+		const minTy = canvasHeight - drawH;
 		const maxTy = 0;
 		return {
 			scale: t.scale,
@@ -172,8 +173,8 @@ export const ImagePreview = () => {
 		const minS = minScaleRef.current;
 		const newScale = clamp((pct / 100) * minS, minS, maxScaleRef.current);
 		// Center zoom
-		const cx = CANVAS_SIZE / 2;
-		const cy = CANVAS_SIZE / 2;
+		const cx = canvasWidth / 2;
+		const cy = canvasHeight / 2;
 		const { scale, tx, ty } = tRef.current;
 		const iw = imgRef.current.width;
 		const ih = imgRef.current.height;
@@ -192,8 +193,8 @@ export const ImagePreview = () => {
 		<div className="border-2 border-gray-200 rounded-md p-2 w-fit">
 			<canvas
 				ref={previewCanvasRef}
-				width={CANVAS_SIZE}
-				height={CANVAS_SIZE}
+				width={canvasWidth}
+				height={canvasHeight}
 				className="block"
 				style={{ touchAction: "none", background: "#fafafa" }}
 				onPointerDown={onPointerDown}

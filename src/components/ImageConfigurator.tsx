@@ -1,3 +1,4 @@
+import { CanvasSizePicker } from "@/components/CanvasSizePicker.tsx";
 import { ImageOriginal } from "@/components/ImageOriginal.tsx";
 import { ImageOverlay } from "@/components/ImageOverlay.tsx";
 import { ImagePreview } from "@/components/ImagePreview.tsx";
@@ -9,6 +10,7 @@ export const ImageConfigurator = () => {
 	return (
 		<div className="flex flex-row gap-6 border-2 border-gray-200 p-4 rounded-md">
 			<div className="flex flex-col items-center gap-4 w-48">
+				<CanvasSizePicker />
 				<ImageOriginal />
 				<ImageOverlay value={overlay} onChange={setOverlay} />
 			</div>

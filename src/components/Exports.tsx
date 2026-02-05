@@ -1,6 +1,7 @@
 import { Settings } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import { ExportPath } from "@/components/ExportPath.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import {
 	DropdownMenu,
@@ -168,25 +169,28 @@ export const Exports = () => {
 	};
 
 	return (
-		<div className={"flex flex-row gap-4"}>
-			<FileNameInput value={filename} onChange={setFilename} />
-			<ExportSettingsMenu
-				filetype={filetype}
-				setFiletype={setFiletype}
-				hastimestamp={hastimestamp}
-				sethasTimestamp={sethasTimestamp}
-				selectedOverlays={selectedOverlays}
-				setSelectedOverlays={setSelectedOverlays}
-				onBulkExport={() => handleDownload(true)}
-			/>
-			<Button
-				className="px-4 py-2 rounded cursor-pointer"
-				onClick={() => handleDownload(false)}
-				type="button"
-				disabled={!previewCanvasRef.current}
-			>
-				Export
-			</Button>
+		<div className={"flex flex-col gap-4"}>
+			<div className={"flex flex-row gap-4"}>
+				<FileNameInput value={filename} onChange={setFilename} />
+				<ExportSettingsMenu
+					filetype={filetype}
+					setFiletype={setFiletype}
+					hastimestamp={hastimestamp}
+					sethasTimestamp={sethasTimestamp}
+					selectedOverlays={selectedOverlays}
+					setSelectedOverlays={setSelectedOverlays}
+					onBulkExport={() => handleDownload(true)}
+				/>
+				<Button
+					className="px-4 py-2 rounded cursor-pointer"
+					onClick={() => handleDownload(false)}
+					type="button"
+					disabled={!previewCanvasRef.current}
+				>
+					Export
+				</Button>
+			</div>
+			<ExportPath />
 		</div>
 	);
 };

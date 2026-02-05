@@ -1,5 +1,6 @@
 import type React from "react";
-import { createContext, useContext, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { type AppConfig, defaultConfig } from "@/config/defaultConfig.ts";
 import { OverlayType } from "@/utils/drawOverlay.ts";
 
 type CanvasSize = [number, number];
@@ -16,6 +17,7 @@ interface AppContextProps {
 	>;
 	canvasSize: CanvasSize;
 	setCanvasSize: (size: CanvasSize) => void;
+	config: AppConfig;
 }
 
 const AppContext = createContext<AppContextProps | undefined>(undefined);
@@ -65,6 +67,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 		}
 	};
 
+	const [config, setConfig] = useState<AppConfig>(defaultConfig);
+
+	useEffect(() => {
+		let mounted = true;
+		(async () => {
+			try {
+				const res = await fetch("/config.json", { cache: "no-store" });
+				if (!res.ok) return;
+				const remote = (await res.json()) as Partial<AppConfig>;
+				if (!mounted) return;
+				// top-level shallow merge plus deep merge for `info`
+				const merged: AppConfig = {
+					...defaultConfig,
+					...remote,
+					info: { ...defaultConfig.info, ...(remote?.info || {}) },
+					exportPath: {
+						...defaultConfig.exportPath,
+						...(remote?.exportPath || {}),
+					},
+				};
+				setConfig(merged);
+			} catch {
+				/* keep defaults */
+			}
+		})();
+		return () => {
+			mounted = false;
+		};
+	}, []);
+
 	return (
 		<AppContext.Provider
 			value={{
@@ -77,6 +109,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 				originalImageRef,
 				canvasSize,
 				setCanvasSize,
+				config,
 			}}
 		>
 			{children}

@@ -23,6 +23,7 @@ const overlayNames: Record<string, string> = {
 	c: OverlayType.APP,
 	d: OverlayType.MAINTENANCE,
 	e: OverlayType.EDIT,
+	f: OverlayType.DAPR,
 };
 
 export const Exports = () => {
@@ -293,6 +294,9 @@ export const ExportSettingsMenu = ({
 								</ToggleGroupItem>
 								<ToggleGroupItem className="cursor-pointer" value="e">
 									Edit
+								</ToggleGroupItem>
+								<ToggleGroupItem className="cursor-pointer" value="f">
+									dapr
 								</ToggleGroupItem>
 							</ToggleGroup>
 							<Button variant={"outline"} onClick={onBulkExport}>

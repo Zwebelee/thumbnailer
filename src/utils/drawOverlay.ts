@@ -3,6 +3,8 @@ export const OverlayType = {
 	APP: "app",
 	MAINTENANCE: "maintenance",
 	EDIT: "edit",
+	LU: "lu",
+	DAPR: "dapr",
 	APP_TEXT: "app_text",
 	MAINTENANCE2: "maintenance2",
 } as const;
@@ -19,6 +21,8 @@ export const overlayOptions: OverlayOption[] = [
 	{ id: OverlayType.APP, label: "App" },
 	{ id: OverlayType.MAINTENANCE, label: "Maintenance" },
 	{ id: OverlayType.EDIT, label: "Edit" },
+	{ id: OverlayType.LU, label: "LU" },
+	{ id: OverlayType.DAPR, label: "dapr" },
 	{ id: OverlayType.APP_TEXT, label: "Test App Text" },
 	{ id: OverlayType.MAINTENANCE2, label: "Test Maintenance 2" },
 ];
@@ -48,6 +52,8 @@ export const IconPath = {
 	SETTINGS: getAssetUrl("settings.svg"),
 	PENCIL: getAssetUrl("pencil.svg"),
 	APPWINDOW: getAssetUrl("app-window.svg"),
+	LU: getAssetUrl("lu.svg"),
+	DAPR: getAssetUrl("dapr.svg"),
 } as const;
 
 export async function drawOverlay(
@@ -107,6 +113,51 @@ export async function drawOverlay(
 			const iconSize = 92;
 			ctx.save();
 			ctx.drawImage(icon, 10, 10, iconSize, iconSize);
+			ctx.restore();
+		} catch {}
+	} else if (overlay === OverlayType.LU) {
+		try {
+			const icon = await loadImage(IconPath.LU);
+
+			const maxW = 108;
+			const maxH = 92;
+
+			// intrinsic size fallbacks
+			const iw = icon.naturalWidth || icon.width || maxW;
+			const ih = icon.naturalHeight || icon.height || maxH;
+
+			// scale to fit while preserving aspect ratio
+			const scale = Math.min(maxW / iw, maxH / ih, 1);
+			const w = Math.round(iw * scale);
+			const h = Math.round(ih * scale);
+
+			// position (left padding 5, vertically centered inside maxH)
+			const x = 16;
+			const y = 5;
+
+			ctx.save();
+			ctx.drawImage(icon, x, y, w, h);
+			ctx.restore();
+		} catch {}
+	} else if (overlay === OverlayType.DAPR) {
+		ctx.save();
+		ctx.fillStyle = "rgba(255, 215, 0,1)";
+		ctx.beginPath();
+		ctx.moveTo(0, 0);
+		ctx.lineTo(180, 0);
+		ctx.lineTo(0, 180);
+		ctx.closePath();
+		ctx.fill();
+
+		try {
+			const icon = await loadImage(IconPath.DAPR);
+			const iconSize = 72;
+			const centroidX = (0 + 180 + 0) / 3;
+			const centroidY = (0 + 0 + 180) / 3;
+			ctx.save();
+			ctx.translate(centroidX, centroidY);
+			ctx.rotate(-Math.PI / 4);
+			ctx.drawImage(icon, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
 			ctx.restore();
 		} catch {}
 	} else if (overlay === OverlayType.APP_TEXT) {

@@ -14,10 +14,10 @@ export const ExportPath = () => {
 	}
 
 	return (
-		<div className={"p-2 flex flex-col gap-2 border rounded-md"}>
+		<div className={"flex flex-row items-center gap-2"}>
 			<Label>{title}</Label>
-			<div className={"flex flex-row gap-2"}>
-				<Label className={"font-light mb-2"}>{path}</Label>
+			<div className={"flex flex-row items-center gap-2"}>
+				<Label className={"flex font-light"}>{path}</Label>
 				<Button
 					variant="ghost"
 					size={"icon"}

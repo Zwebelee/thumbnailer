@@ -1,6 +1,5 @@
 import type React from "react";
 import { Input } from "@/components/ui/input.tsx";
-import { Label } from "@/components/ui/label.tsx";
 import { useAppContext } from "@/context/AppContext.tsx";
 
 export const ImageSelector = () => {
@@ -13,9 +12,12 @@ export const ImageSelector = () => {
 
 	return (
 		<div>
-			<div className="flex flex-row items-center gap-3 border p-4 rounded-md">
-				<Label htmlFor="picture">Select Image</Label>
-				<Input id="picture" type="file" onChange={handleFileChange} />
+			<div className="flex flex-row items-center gap-4 p-2">
+				<Input
+					type="file"
+					className={"cursor-pointer"}
+					onChange={handleFileChange}
+				/>
 			</div>
 		</div>
 	);

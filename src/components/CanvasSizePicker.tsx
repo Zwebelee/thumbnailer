@@ -51,12 +51,13 @@ export const CanvasSizePicker = () => {
 	};
 
 	return (
-		<div className="flex flex-col border-2 m-4 border-gray-200 rounded">
-			<Label>Canvas Size</Label>
+		<div className="flex flex-col items-center gap-2 p-2">
+			<Label className={"font-semibold"}>Canvas Size</Label>
 			<ToggleGroup
 				type="single"
 				value={selected}
 				onValueChange={(v) => applyPreset(v as any)}
+				className="border"
 			>
 				<ToggleGroupItem className="cursor-pointer" value="400x400">
 					400 x 400

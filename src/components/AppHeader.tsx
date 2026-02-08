@@ -12,7 +12,7 @@ export const AppHeader = () => {
 	const text = config.info.text;
 
 	return (
-		<header className={"mb-4 gap-2 flex flex-col items-center"}>
+		<header className={"flex flex-col p-2 gap-2 items-center w-full"}>
 			<div className={"flex flex-row gap-8"}>
 				<Label className={"text-3xl font-bold"}>{title}</Label>
 				{text && (
@@ -26,11 +26,9 @@ export const AppHeader = () => {
 					</Button>
 				)}
 			</div>
-			<div>
-				{infoOpen && (
-					<Label className={"font-light wrap-break-word"}>{text}</Label>
-				)}
-			</div>
+			{infoOpen && (
+				<Label className={"block font-light text-justify  p-2"}>{text}</Label>
+			)}
 		</header>
 	);
 };

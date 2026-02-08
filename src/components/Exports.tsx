@@ -170,7 +170,7 @@ export const Exports = () => {
 	};
 
 	return (
-		<div className={"flex flex-col gap-4"}>
+		<div className={"flex flex-col gap-4 border rounded-md p-2 m-2"}>
 			<div className={"flex flex-row gap-4"}>
 				<FileNameInput value={filename} onChange={setFilename} />
 				<ExportSettingsMenu
@@ -240,7 +240,9 @@ export const ExportSettingsMenu = ({
 				<Settings />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>
-				<DropdownMenuLabel>Export Settings</DropdownMenuLabel>
+				<DropdownMenuLabel className={"font-bold text-lg"}>
+					Export Settings
+				</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				<ExportSettingsMenuItem
 					label={"Filetype"}
@@ -274,14 +276,15 @@ export const ExportSettingsMenu = ({
 				<ExportSettingsMenuItem
 					label={"Bulk Export"}
 					children={
-						<>
+						<div className={"flex flex-col items-center gap-2"}>
 							<ToggleGroup
 								type="multiple"
 								value={selectedOverlays}
 								onValueChange={setSelectedOverlays}
+								className={"border rounded-md"}
 							>
 								<ToggleGroupItem className="cursor-pointer" value="a">
-									Original
+									Origi.
 								</ToggleGroupItem>
 								<ToggleGroupItem className="cursor-pointer" value="b">
 									Blank
@@ -290,7 +293,7 @@ export const ExportSettingsMenu = ({
 									App
 								</ToggleGroupItem>
 								<ToggleGroupItem className="cursor-pointer" value="d">
-									Maintenance
+									Maint.
 								</ToggleGroupItem>
 								<ToggleGroupItem className="cursor-pointer" value="e">
 									Edit
@@ -299,10 +302,14 @@ export const ExportSettingsMenu = ({
 									dapr
 								</ToggleGroupItem>
 							</ToggleGroup>
-							<Button variant={"outline"} onClick={onBulkExport}>
+							<Button
+								variant={"default"}
+								onClick={onBulkExport}
+								className={"cursor-pointer"}
+							>
 								Export Bulk
 							</Button>
-						</>
+						</div>
 					}
 					layout={"col"}
 				/>
@@ -324,7 +331,7 @@ export const ExportSettingsMenuItem = ({
 }: ExportSettingsMenuItemProps) => {
 	return (
 		<div className={`flex flex-${layout} justify-between items-center`}>
-			<Label className={"font-normal"}>{label}</Label>
+			<Label className={"font-semibold p-2"}>{label}</Label>
 			{children}
 		</div>
 	);

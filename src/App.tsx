@@ -8,13 +8,17 @@ import { AppProvider } from "@/context/AppContext.tsx";
 function App() {
 	return (
 		<AppProvider>
-			<div className={"flex flex-col items-center gap-4 min-w-180"}>
+			<div
+				className={
+					"flex flex-col items-center gap-4 min-w-3xl max-w-7xl mx-auto"
+				}
+			>
 				<AppHeader />
-				<div className={"flex flex-col gap-4"}>
+				<div className={"flex flex-col gap-4 p-2 w-full "}>
 					<ImageSelector />
 					<ImageConfigurator />
+					<Exports />
 				</div>
-				<Exports />
 			</div>
 		</AppProvider>
 	);

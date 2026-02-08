@@ -8,13 +8,13 @@ export const ImageConfigurator = () => {
 	const { overlay, setOverlay } = useAppContext();
 
 	return (
-		<div className="flex flex-row gap-6 border-2 border-gray-200 p-4 rounded-md">
-			<div className="flex flex-col items-center gap-4 w-48">
+		<div className="flex flex-row gap-6 m-2 p-2 border rounded-md">
+			<div className="flex flex-col p-2 gap-2 items-center">
 				<CanvasSizePicker />
 				<ImageOriginal />
 				<ImageOverlay value={overlay} onChange={setOverlay} />
 			</div>
-			<div className="flex flex-col items-center gap-2">
+			<div className="gap-2">
 				<ImagePreview />
 			</div>
 		</div>

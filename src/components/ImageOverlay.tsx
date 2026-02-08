@@ -1,3 +1,11 @@
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { type OverlayType, overlayOptions } from "@/utils/drawOverlay.ts";
 
 export const ImageOverlay = ({
@@ -7,18 +15,21 @@ export const ImageOverlay = ({
 	value: string;
 	onChange: (id: OverlayType) => void;
 }) => (
-	<div className="border-2 border-gray-200 p-2 rounded">
-		<h3 className="mb-2 text-sm font-semibold">Overlay Selector</h3>
-		<select
-			value={value}
-			onChange={(e) => onChange(e.target.value as OverlayType)}
-			className="border rounded px-2 py-1"
-		>
-			{overlayOptions.map((opt) => (
-				<option key={opt.id} value={opt.id}>
-					{opt.label}
-				</option>
-			))}
-		</select>
+	<div className="flex flex-col items-center gap-2">
+		<Label className="font-semibold">Overlay Selector</Label>
+
+		<Select value={value} onValueChange={(v) => onChange(v as OverlayType)}>
+			<SelectTrigger className="w-50 cursor-pointer">
+				<SelectValue placeholder="Select overlay" />
+			</SelectTrigger>
+
+			<SelectContent>
+				{overlayOptions.map((opt) => (
+					<SelectItem key={opt.id} value={opt.id} className={"cursor-pointer"}>
+						{opt.label}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
 	</div>
 );

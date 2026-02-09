@@ -73,7 +73,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 		let mounted = true;
 		(async () => {
 			try {
-				const res = await fetch("/config.json", { cache: "no-store" });
+				const res = await fetch("config.json", { cache: "no-store" });
 				if (!res.ok) return;
 				const remote = (await res.json()) as Partial<AppConfig>;
 				if (!mounted) return;

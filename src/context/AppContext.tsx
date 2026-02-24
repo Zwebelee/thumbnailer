@@ -68,7 +68,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 	};
 
 	const [config, setConfig] = useState<AppConfig>(defaultConfig);
-	console.debug(config);
 
 	useEffect(() => {
 		let mounted = true;

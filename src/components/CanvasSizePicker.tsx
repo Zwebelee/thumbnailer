@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { useAppContext } from "@/context/AppContext.tsx";
 
+type PresetSize = "400x400" | "600x400" | "custom";
+
 export const CanvasSizePicker = () => {
 	const { canvasSize, setCanvasSize } = useAppContext();
 
@@ -16,9 +18,7 @@ export const CanvasSizePicker = () => {
 				? "600x400"
 				: "custom";
 
-	const [selected, setSelected] = useState<"400x400" | "600x400" | "custom">(
-		initialSelected,
-	);
+	const [selected, setSelected] = useState<PresetSize>(initialSelected);
 	const [customW, setCustomW] = useState<string>(String(canvasSize[0]));
 	const [customH, setCustomH] = useState<string>(String(canvasSize[1]));
 
@@ -34,7 +34,7 @@ export const CanvasSizePicker = () => {
 		}
 	}, [canvasSize]);
 
-	const applyPreset = (val: "400x400" | "600x400" | "custom") => {
+	const applyPreset = (val: PresetSize) => {
 		setSelected(val);
 		if (val === "400x400") setCanvasSize([400, 400]);
 		else if (val === "600x400") setCanvasSize([600, 400]);
@@ -56,7 +56,7 @@ export const CanvasSizePicker = () => {
 			<ToggleGroup
 				type="single"
 				value={selected}
-				onValueChange={(v) => applyPreset(v as any)}
+				onValueChange={(v) => applyPreset(v as PresetSize)}
 				className="border"
 			>
 				<ToggleGroupItem className="cursor-pointer" value="400x400">

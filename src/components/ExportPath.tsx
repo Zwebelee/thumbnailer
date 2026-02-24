@@ -1,5 +1,4 @@
-import { ClipboardCopy } from "lucide-react";
-import { Button } from "@/components/ui/button.tsx";
+import { ClipboardCopyButton } from "@/components/ClipboardCopyButton.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { useAppContext } from "@/context/AppContext.tsx";
 
@@ -8,9 +7,10 @@ export const ExportPath = () => {
 
 	const title = config.exportPath?.title;
 	const path = config.exportPath?.path;
+	const show = config.exportPath?.show;
 
-	if (!title && !path) {
-		return null;
+	if (!title || !path || !show) {
+		return;
 	}
 
 	return (
@@ -18,18 +18,7 @@ export const ExportPath = () => {
 			<Label>{title}</Label>
 			<div className={"flex flex-row items-center gap-2"}>
 				<Label className={"flex font-light"}>{path}</Label>
-				<Button
-					variant="ghost"
-					size={"icon"}
-					className={"cursor-pointer"}
-					onClick={() => {
-						if (path) {
-							navigator.clipboard.writeText(path);
-						}
-					}}
-				>
-					<ClipboardCopy />
-				</Button>
+				<ClipboardCopyButton path={path} />
 			</div>
 		</div>
 	);

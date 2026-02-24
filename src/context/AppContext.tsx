@@ -68,6 +68,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 	};
 
 	const [config, setConfig] = useState<AppConfig>(defaultConfig);
+	console.debug(config);
 
 	useEffect(() => {
 		let mounted = true;
@@ -82,6 +83,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 					...defaultConfig,
 					...remote,
 					info: { ...defaultConfig.info, ...(remote?.info || {}) },
+					export: { ...defaultConfig.export, ...(remote?.export || {}) },
 					exportPath: {
 						...defaultConfig.exportPath,
 						...(remote?.exportPath || {}),

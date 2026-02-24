@@ -1,6 +1,6 @@
 import { Settings } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ExportPath } from "@/components/ExportPath.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import {
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import type { ImageFormat } from "@/config/defaultConfig.ts";
 import { useAppContext } from "@/context/AppContext.tsx";
 import { drawOverlay, OverlayType } from "@/utils/drawOverlay.ts";
 
@@ -27,14 +28,28 @@ const overlayNames: Record<string, string> = {
 };
 
 export const Exports = () => {
-	const { previewCanvasRef, originalImageRef } = useAppContext();
-	const [filename, setFilename] = useState(`thumbnail`);
-	const [filetype, setFiletype] = useState<"png" | "jpg">("jpg");
-	const [hastimestamp, sethasTimestamp] = useState<boolean>(true);
-	const [selectedOverlays, setSelectedOverlays] = useState<string[]>([
-		"a",
-		"c",
-		"d",
+	const { config, previewCanvasRef, originalImageRef } = useAppContext();
+	const [filename, setFilename] = useState(config.export.defaultName);
+	const [filetype, setFiletype] = useState<ImageFormat>(
+		config.export.defaultFormat,
+	);
+	const [hasTimestamp, setHasTimestamp] = useState<boolean>(
+		config.export.defaultTimestampActive,
+	);
+	const [selectedOverlays, setSelectedOverlays] = useState<string[]>(
+		config.export.defaultSelectedBulkOverlays ?? [],
+	);
+
+	useEffect(() => {
+		setFilename(config?.export?.defaultName ?? "");
+		setFiletype(config?.export?.defaultFormat ?? "jpg");
+		setHasTimestamp(Boolean(config?.export?.defaultTimestampActive));
+		setSelectedOverlays(config?.export?.defaultSelectedBulkOverlays ?? []);
+	}, [
+		config?.export?.defaultName,
+		config?.export?.defaultFormat,
+		config?.export?.defaultTimestampActive,
+		config?.export?.defaultSelectedBulkOverlays,
 	]);
 
 	const handleDownload = async (bulk: boolean = false) => {
@@ -52,7 +67,7 @@ export const Exports = () => {
 			URL.revokeObjectURL(url);
 		};
 
-		const timestampSuffix = hastimestamp ? `_${getLocalTimestamp()}` : "";
+		const timestampSuffix = hasTimestamp ? `_${getLocalTimestamp()}` : "";
 
 		const elementToBlob = async (
 			el: HTMLImageElement | HTMLCanvasElement,
@@ -141,7 +156,7 @@ export const Exports = () => {
 			return;
 		}
 
-		if (hastimestamp) {
+		if (hasTimestamp) {
 			finalFilename += `${timestampSuffix}`;
 		}
 
@@ -176,8 +191,8 @@ export const Exports = () => {
 				<ExportSettingsMenu
 					filetype={filetype}
 					setFiletype={setFiletype}
-					hastimestamp={hastimestamp}
-					sethasTimestamp={sethasTimestamp}
+					hastimestamp={hasTimestamp}
+					sethasTimestamp={setHasTimestamp}
 					selectedOverlays={selectedOverlays}
 					setSelectedOverlays={setSelectedOverlays}
 					onBulkExport={() => handleDownload(true)}

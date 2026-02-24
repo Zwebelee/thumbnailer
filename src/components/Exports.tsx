@@ -259,75 +259,65 @@ export const ExportSettingsMenu = ({
 					Export Settings
 				</DropdownMenuLabel>
 				<DropdownMenuSeparator />
-				<ExportSettingsMenuItem
-					label={"Filetype"}
-					children={
+				<ExportSettingsMenuItem label={"Filetype"}>
+					<ToggleGroup
+						type="single"
+						value={filetype}
+						onValueChange={(val) => setFiletype(val as "png" | "jpg")}
+					>
+						<ToggleGroupItem className="cursor-pointer" value="jpg">
+							jpg
+						</ToggleGroupItem>
+						<ToggleGroupItem className="cursor-pointer" value="png">
+							png
+						</ToggleGroupItem>
+					</ToggleGroup>
+				</ExportSettingsMenuItem>
+				<DropdownMenuSeparator />
+				<ExportSettingsMenuItem label={"Timestamp"}>
+					<Switch
+						checked={hastimestamp}
+						onCheckedChange={sethasTimestamp}
+						className="cursor-pointer"
+					/>
+				</ExportSettingsMenuItem>
+				<DropdownMenuSeparator />
+				<ExportSettingsMenuItem label={"Bulk Export"} layout={"col"}>
+					<div className={"flex flex-col items-center gap-2"}>
 						<ToggleGroup
-							type="single"
-							value={filetype}
-							onValueChange={(val) => setFiletype(val as "png" | "jpg")}
+							type="multiple"
+							value={selectedOverlays}
+							onValueChange={setSelectedOverlays}
+							className={"border rounded-md"}
 						>
-							<ToggleGroupItem className="cursor-pointer" value="jpg">
-								jpg
+							<ToggleGroupItem className="cursor-pointer" value="a">
+								Origi.
 							</ToggleGroupItem>
-							<ToggleGroupItem className="cursor-pointer" value="png">
-								png
+							<ToggleGroupItem className="cursor-pointer" value="b">
+								Blank
+							</ToggleGroupItem>
+							<ToggleGroupItem className="cursor-pointer" value="c">
+								App
+							</ToggleGroupItem>
+							<ToggleGroupItem className="cursor-pointer" value="d">
+								Maint.
+							</ToggleGroupItem>
+							<ToggleGroupItem className="cursor-pointer" value="e">
+								Edit
+							</ToggleGroupItem>
+							<ToggleGroupItem className="cursor-pointer" value="f">
+								dapr
 							</ToggleGroupItem>
 						</ToggleGroup>
-					}
-				/>
-				<DropdownMenuSeparator />
-				<ExportSettingsMenuItem
-					label={"Timestamp"}
-					children={
-						<Switch
-							checked={hastimestamp}
-							onCheckedChange={sethasTimestamp}
-							className="cursor-pointer"
-						/>
-					}
-				/>
-				<DropdownMenuSeparator />
-				<ExportSettingsMenuItem
-					label={"Bulk Export"}
-					children={
-						<div className={"flex flex-col items-center gap-2"}>
-							<ToggleGroup
-								type="multiple"
-								value={selectedOverlays}
-								onValueChange={setSelectedOverlays}
-								className={"border rounded-md"}
-							>
-								<ToggleGroupItem className="cursor-pointer" value="a">
-									Origi.
-								</ToggleGroupItem>
-								<ToggleGroupItem className="cursor-pointer" value="b">
-									Blank
-								</ToggleGroupItem>
-								<ToggleGroupItem className="cursor-pointer" value="c">
-									App
-								</ToggleGroupItem>
-								<ToggleGroupItem className="cursor-pointer" value="d">
-									Maint.
-								</ToggleGroupItem>
-								<ToggleGroupItem className="cursor-pointer" value="e">
-									Edit
-								</ToggleGroupItem>
-								<ToggleGroupItem className="cursor-pointer" value="f">
-									dapr
-								</ToggleGroupItem>
-							</ToggleGroup>
-							<Button
-								variant={"default"}
-								onClick={onBulkExport}
-								className={"cursor-pointer"}
-							>
-								Export Bulk
-							</Button>
-						</div>
-					}
-					layout={"col"}
-				/>
+						<Button
+							variant={"default"}
+							onClick={onBulkExport}
+							className={"cursor-pointer"}
+						>
+							Export Bulk
+						</Button>
+					</div>
+				</ExportSettingsMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

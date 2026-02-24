@@ -1,4 +1,3 @@
-import "./App.css";
 import { AppHeader } from "@/components/AppHeader.tsx";
 import { Exports } from "@/components/Exports.tsx";
 import { ImageConfigurator } from "@/components/ImageConfigurator.tsx";
@@ -10,7 +9,7 @@ function App() {
 		<AppProvider>
 			<div
 				className={
-					"flex flex-col items-center gap-4 min-w-3xl max-w-7xl mx-auto"
+					"flex flex-col items-center p-8 gap-4 min-w-3xl max-w-7xl mx-auto"
 				}
 			>
 				<AppHeader />

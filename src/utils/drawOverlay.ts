@@ -40,11 +40,11 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 function getAssetUrl(name: string) {
 	const asset = name.startsWith("/") ? name.slice(1) : name;
 	const base = import.meta.env.BASE_URL ?? "/";
-	const normalized = base.endsWith("/") ? base : base + "/";
+	const normalized = base.endsWith("/") ? base : `${base}/`;
 	const absoluteBase = normalized.startsWith("http")
 		? normalized
 		: window.location.origin +
-			(normalized.startsWith("/") ? normalized : "/" + normalized);
+			(normalized.startsWith("/") ? normalized : `/${normalized}`);
 	return new URL(asset, absoluteBase).href;
 }
 

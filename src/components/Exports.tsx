@@ -9,11 +9,11 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+} from "@/components/ui/dropdown-menu.tsx";
+import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import type { ImageFormat } from "@/config/defaultConfig.ts";
 import { useAppContext } from "@/context/AppContext.tsx";
 import { drawOverlay, OverlayType } from "@/utils/drawOverlay.ts";

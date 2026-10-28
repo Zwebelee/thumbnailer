@@ -82,7 +82,6 @@ export const ImagePreview = () => {
 			draw();
 		};
 		img.src = imageUrl;
-		// eslint-disable-next-line
 	}, [imageUrl, canvasWidth, canvasHeight, originalImageRef, draw]);
 
 	// Draw function

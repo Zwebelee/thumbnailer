@@ -1,11 +1,11 @@
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label.tsx";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select.tsx";
 import { type OverlayType, overlayOptions } from "@/utils/drawOverlay.ts";
 
 export const ImageOverlay = ({

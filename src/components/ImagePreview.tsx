@@ -9,8 +9,13 @@ const clamp = (v: number, min: number, max: number) =>
 	Math.max(min, Math.min(max, v));
 
 export const ImagePreview = () => {
-	const { imageUrl, previewCanvasRef, overlay, originalImageRef, canvasSize } =
-		useAppContext();
+	const {
+		imageUrl,
+		previewCanvasRef,
+		overlayDef,
+		originalImageRef,
+		canvasSize,
+	} = useAppContext();
 	const imgRef = useRef<HTMLImageElement | null>(null);
 	const canvasWidth = canvasSize[0];
 	const canvasHeight = canvasSize[1];
@@ -53,8 +58,8 @@ export const ImagePreview = () => {
 		ctx.lineWidth = 1;
 		ctx.strokeRect(0.5, 0.5, canvasWidth - 1, canvasHeight - 1);
 
-		drawOverlay(ctx, overlay);
-	}, [overlay, canvasWidth, canvasHeight, previewCanvasRef]);
+		drawOverlay(ctx, overlayDef);
+	}, [overlayDef, canvasWidth, canvasHeight, previewCanvasRef]);
 
 	// Load image and initialize transform
 	useEffect(() => {

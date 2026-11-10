@@ -1,0 +1,67 @@
+{
+	"info": {
+		"title": "ACME Thumbnailer",
+		"text": "Thumbnails for the ACME app portal.",
+		"logo": "custom/logo.svg",
+		"favicon": "custom/logo.svg"
+	},
+	"export": {
+		"defaultName": "acme",
+		"defaultFormat": "png",
+		"defaultSelectedBulkOverlays": ["original", "app", "acme_logo"]
+	},
+	"exportPath": {
+		"title": "Upload to",
+		"path": "\\\\fileserver\\portal\\thumbnails\\"
+	},
+	"canvasSizes": [
+		{ "width": 400, "height": 400 },
+		{ "width": 600, "height": 400 },
+		{ "width": 1200, "height": 630, "label": "Social" }
+	],
+	"overlaysAppend": [
+		{
+			"id": "acme_logo",
+			"label": "ACME Logo",
+			"shortLabel": "Logo",
+			"layers": [
+				{
+					"type": "icon",
+					"src": "custom/logo.svg",
+					"anchor": "tl",
+					"x": 63,
+					"y": 29,
+					"width": 94,
+					"height": 48
+				}
+			]
+		},
+		{
+			"id": "acme_beta",
+			"label": "ACME Beta",
+			"shortLabel": "Beta",
+			"layers": [
+				{ "type": "triangle", "corner": "tr", "size": 160, "color": "#6d28d9" },
+				{
+					"type": "text",
+					"text": "BETA",
+					"anchor": "tr",
+					"x": 52,
+					"y": 52,
+					"rotate": 45,
+					"font": "bold 26px sans-serif",
+					"color": "#ffffff"
+				},
+				{
+					"type": "icon",
+					"src": "pencil.svg",
+					"anchor": "bl",
+					"x": 40,
+					"y": 40,
+					"size": 48,
+					"stroke": "#6d28d9"
+				}
+			]
+		}
+	]
+}

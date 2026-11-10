@@ -14,18 +14,13 @@ import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import type { ImageFormat } from "@/config/defaultConfig.ts";
+import {
+	type ImageFormat,
+	NO_OVERLAY,
+	ORIGINAL,
+} from "@/config/defaultConfig.ts";
 import { useAppContext } from "@/context/AppContext.tsx";
-import { drawOverlay, OverlayType } from "@/utils/drawOverlay.ts";
-
-const overlayNames: Record<string, string> = {
-	a: "original",
-	b: OverlayType.NONE,
-	c: OverlayType.APP,
-	d: OverlayType.MAINTENANCE,
-	e: OverlayType.EDIT,
-	f: OverlayType.DAPR,
-};
+import { drawOverlay } from "@/utils/drawOverlay.ts";
 
 export const Exports = () => {
 	const { config, previewCanvasRef, originalImageRef } = useAppContext();
@@ -98,12 +93,12 @@ export const Exports = () => {
 		};
 
 		if (bulk) {
-			for (const key of selectedOverlays) {
-				const overlayTypeStr = overlayNames[key];
-				if (!overlayTypeStr) continue;
+			for (const id of selectedOverlays) {
+				const overlayDef = config.overlays.find((o) => o.id === id);
+				if (id !== ORIGINAL && id !== NO_OVERLAY && !overlayDef) continue;
 
 				// special-case "original": export the uploaded image (originalImageRef) not the preview canvas
-				if (overlayTypeStr === "original") {
+				if (id === ORIGINAL) {
 					const origEl =
 						(originalImageRef?.current as
 							| HTMLImageElement
@@ -135,7 +130,6 @@ export const Exports = () => {
 				}
 
 				// non-original entries: clone preview canvas and draw overlay
-				const overlayType = overlayTypeStr as OverlayType;
 				const off = document.createElement("canvas");
 				off.width = canvas.width;
 				off.height = canvas.height;
@@ -143,13 +137,13 @@ export const Exports = () => {
 				if (!ctx) continue;
 				ctx.drawImage(canvas, 0, 0);
 
-				await drawOverlay(ctx, overlayType);
+				await drawOverlay(ctx, overlayDef);
 
 				const blob = await new Promise<Blob | null>((res) =>
 					off.toBlob((b) => res(b), mimeType),
 				);
 				if (blob) {
-					const safeName = `${filename}_${overlayType}${timestampSuffix}.${filetype}`;
+					const safeName = `${filename}_${id}${timestampSuffix}.${filetype}`;
 					downloadBlob(blob, safeName);
 				}
 			}
@@ -249,6 +243,13 @@ export const ExportSettingsMenu = ({
 	setSelectedOverlays,
 	onBulkExport,
 }: ExportSettingsMenuProps) => {
+	const { config } = useAppContext();
+	const bulkOptions = [
+		{ id: ORIGINAL, label: "Original", shortLabel: "Origi." },
+		{ id: NO_OVERLAY, label: "Blank" },
+		...config.overlays,
+	];
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger className={"cursor-pointer"}>
@@ -288,26 +289,18 @@ export const ExportSettingsMenu = ({
 							type="multiple"
 							value={selectedOverlays}
 							onValueChange={setSelectedOverlays}
-							className={"border rounded-md"}
+							className={"border rounded-md flex-wrap"}
 						>
-							<ToggleGroupItem className="cursor-pointer" value="a">
-								Origi.
-							</ToggleGroupItem>
-							<ToggleGroupItem className="cursor-pointer" value="b">
-								Blank
-							</ToggleGroupItem>
-							<ToggleGroupItem className="cursor-pointer" value="c">
-								App
-							</ToggleGroupItem>
-							<ToggleGroupItem className="cursor-pointer" value="d">
-								Maint.
-							</ToggleGroupItem>
-							<ToggleGroupItem className="cursor-pointer" value="e">
-								Edit
-							</ToggleGroupItem>
-							<ToggleGroupItem className="cursor-pointer" value="f">
-								dapr
-							</ToggleGroupItem>
+							{bulkOptions.map((opt) => (
+								<ToggleGroupItem
+									key={opt.id}
+									className="cursor-pointer"
+									value={opt.id}
+									title={opt.label}
+								>
+									{opt.shortLabel ?? opt.label}
+								</ToggleGroupItem>
+							))}
 						</ToggleGroup>
 						<Button
 							variant={"default"}

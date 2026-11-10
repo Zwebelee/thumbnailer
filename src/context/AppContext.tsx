@@ -1,7 +1,14 @@
 import type React from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { type AppConfig, defaultConfig } from "@/config/defaultConfig.ts";
-import { OverlayType } from "@/utils/drawOverlay.ts";
+import {
+	type AppConfig,
+	type ConfigOverride,
+	defaultConfig,
+	mergeConfig,
+	NO_OVERLAY,
+	type OverlayDef,
+} from "@/config/defaultConfig.ts";
+import { getAssetUrl } from "@/utils/drawOverlay.ts";
 
 type CanvasSize = [number, number];
 
@@ -10,8 +17,11 @@ interface AppContextProps {
 	setImage: (file: File | null) => void;
 	imageUrl: string | null;
 	previewCanvasRef: React.RefObject<HTMLCanvasElement | null>;
-	overlay: OverlayType;
-	setOverlay: (overlay: OverlayType) => void;
+	/** Selected overlay id ("none" = no overlay) */
+	overlay: string;
+	setOverlay: (overlay: string) => void;
+	/** Definition of the selected overlay, undefined for "none" */
+	overlayDef: OverlayDef | undefined;
 	originalImageRef: React.RefObject<
 		HTMLImageElement | HTMLCanvasElement | null
 	>;
@@ -35,7 +45,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
 	const [image, setImageState] = useState<File | null>(null);
 	const [imageUrl, setImageUrl] = useState<string | null>(null);
-	const [overlay, setOverlay] = useState<OverlayType>(OverlayType.NONE);
+	const [overlay, setOverlay] = useState<string>(NO_OVERLAY);
 	const prevUrl = useRef<string | null>(null);
 	const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -69,34 +79,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
 	const [config, setConfig] = useState<AppConfig>(defaultConfig);
 
+	// Load order (later wins): defaultConfig.ts -> custom/config.json -> config.json
+	// custom/ is the company customization folder; config.json is an optional
+	// deploy-time override placed next to index.html.
 	useEffect(() => {
 		let mounted = true;
 		(async () => {
-			try {
-				const res = await fetch("config.json", { cache: "no-store" });
-				if (!res.ok) return;
-				const remote = (await res.json()) as Partial<AppConfig>;
-				if (!mounted) return;
-				// top-level shallow merge plus deep merge for `info`
-				const merged: AppConfig = {
-					...defaultConfig,
-					...remote,
-					info: { ...defaultConfig.info, ...(remote?.info || {}) },
-					export: { ...defaultConfig.export, ...(remote?.export || {}) },
-					exportPath: {
-						...defaultConfig.exportPath,
-						...(remote?.exportPath || {}),
-					},
-				};
-				setConfig(merged);
-			} catch {
-				/* keep defaults */
+			let merged = defaultConfig;
+			for (const file of ["custom/config.json", "config.json"]) {
+				merged = mergeConfig(merged, await fetchConfig(file));
 			}
+			if (!mounted) return;
+			setConfig(merged);
+			const first = merged.canvasSizes[0];
+			if (first) setCanvasSizeState([first.width, first.height]);
 		})();
 		return () => {
 			mounted = false;
 		};
 	}, []);
+
+	useEffect(() => {
+		if (config.info.title) document.title = config.info.title;
+		if (config.info.favicon) {
+			const link =
+				document.querySelector<HTMLLinkElement>("link[rel='icon']") ??
+				document.head.appendChild(document.createElement("link"));
+			link.rel = "icon";
+			link.href = getAssetUrl(config.info.favicon);
+		}
+	}, [config.info.title, config.info.favicon]);
+
+	const overlayDef = config.overlays.find((o) => o.id === overlay);
 
 	return (
 		<AppContext.Provider
@@ -107,6 +121,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 				previewCanvasRef,
 				overlay,
 				setOverlay,
+				overlayDef,
 				originalImageRef,
 				canvasSize,
 				setCanvasSize,
@@ -117,3 +132,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 		</AppContext.Provider>
 	);
 };
+
+async function fetchConfig(file: string): Promise<ConfigOverride | null> {
+	try {
+		const res = await fetch(file, { cache: "no-store" });
+		if (!res.ok) return null;
+		const text = await res.text();
+		// missing file: the dev server / SPA fallback answers with index.html
+		if (text.trimStart().startsWith("<")) return null;
+		return JSON.parse(text) as ConfigOverride;
+	} catch (e) {
+		console.warn(`Could not load ${file}`, e);
+		return null;
+	}
+}

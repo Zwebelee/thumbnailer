@@ -28,10 +28,7 @@ public/custom/
   logo.svg       <- your assets, referenced as "custom/logo.svg"
 ```
 
-Config load order (later wins, objects are deep-merged, arrays are replaced):
-1. `src/config/defaultConfig.ts`: defaults + sample overlays
-2. `custom/config.json`: your customization (committed in your fork)
-3. `config.json` next to `index.html`: optional deploy-time override, e.g. edited directly on the server
+`custom/config.json` is loaded at runtime and merged over the defaults + sample overlays in `src/config/defaultConfig.ts` (objects are deep-merged, arrays are replaced). It is optional; without it the defaults are used.
 
 | Key | Description |
 |---|---|

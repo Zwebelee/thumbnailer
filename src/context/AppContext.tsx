@@ -79,16 +79,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
 	const [config, setConfig] = useState<AppConfig>(defaultConfig);
 
-	// Load order (later wins): defaultConfig.ts -> custom/config.json -> config.json
-	// custom/ is the company customization folder; config.json is an optional
-	// deploy-time override placed next to index.html.
+	// defaultConfig.ts, overridden by custom/config.json (the company customization folder)
 	useEffect(() => {
 		let mounted = true;
 		(async () => {
-			let merged = defaultConfig;
-			for (const file of ["custom/config.json", "config.json"]) {
-				merged = mergeConfig(merged, await fetchConfig(file));
-			}
+			const merged = mergeConfig(
+				defaultConfig,
+				await fetchConfig("custom/config.json"),
+			);
 			if (!mounted) return;
 			setConfig(merged);
 			const first = merged.canvasSizes[0];

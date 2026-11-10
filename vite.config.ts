@@ -1,19 +1,14 @@
-import path from "path"
-import tailwindcss from "@tailwindcss/vite"
-import {defineConfig, loadEnv} from 'vite'
-import react from '@vitejs/plugin-react'
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 // https://vite.dev/config/
-export default defineConfig(({mode}) => {
-    const env = loadEnv(mode, process.cwd(), '')
-    return {
-        envDir: "env",
-        base: env.VITE_BASE_URL || '/',
-        plugins: [react(), tailwindcss()],
-        resolve: {
-            alias: {
-                "@": path.resolve(__dirname, "./src"),
-            },
-        },
-    }
-})
+export default defineConfig({
+	// relative base: the same build works in any (sub)folder, e.g. an IIS virtual directory
+	base: "./",
+	plugins: [react(), tailwindcss()],
+	resolve: {
+		// "@/*" alias comes from tsconfig.app.json
+		tsconfigPaths: true,
+	},
+});

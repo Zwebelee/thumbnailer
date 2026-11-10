@@ -1,31 +1,24 @@
-export const OverlayType = {
-	NONE: "none",
-	APP: "app",
-	MAINTENANCE: "maintenance",
-	EDIT: "edit",
-	LU: "lu",
-	DAPR: "dapr",
-	APP_TEXT: "app_text",
-	MAINTENANCE2: "maintenance2",
-} as const;
+import type {
+	Anchor,
+	Corner,
+	IconLayer,
+	OverlayDef,
+	OverlayLayer,
+	TextLayer,
+	TriangleLayer,
+} from "@/config/defaultConfig.ts";
 
-export type OverlayType = (typeof OverlayType)[keyof typeof OverlayType];
-
-export interface OverlayOption {
-	id: OverlayType;
-	label: string;
+/** Resolves a path relative to the app base url; absolute / data / blob urls pass through. */
+export function getAssetUrl(name: string) {
+	if (/^(https?:|data:|blob:)/.test(name)) return name;
+	const asset = name.startsWith("/") ? name.slice(1) : name;
+	const base = import.meta.env.BASE_URL ?? "/";
+	const normalized = base.endsWith("/") ? base : `${base}/`;
+	const absoluteBase = normalized.startsWith("http")
+		? normalized
+		: new URL(normalized, window.location.href).href;
+	return new URL(asset, absoluteBase).href;
 }
-
-export const overlayOptions: OverlayOption[] = [
-	{ id: OverlayType.NONE, label: "None" },
-	{ id: OverlayType.APP, label: "App" },
-	{ id: OverlayType.MAINTENANCE, label: "Maintenance" },
-	{ id: OverlayType.EDIT, label: "Edit" },
-	{ id: OverlayType.LU, label: "LU" },
-	{ id: OverlayType.DAPR, label: "dapr" },
-	{ id: OverlayType.APP_TEXT, label: "Test App Text" },
-	{ id: OverlayType.MAINTENANCE2, label: "Test Maintenance 2" },
-];
 
 function loadImage(src: string): Promise<HTMLImageElement> {
 	return new Promise((resolve, reject) => {
@@ -37,208 +30,142 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 	});
 }
 
-function getAssetUrl(name: string) {
-	const asset = name.startsWith("/") ? name.slice(1) : name;
-	const base = import.meta.env.BASE_URL ?? "/";
-	const normalized = base.endsWith("/") ? base : `${base}/`;
-	const absoluteBase = normalized.startsWith("http")
-		? normalized
-		: window.location.origin +
-			(normalized.startsWith("/") ? normalized : `/${normalized}`);
-	return new URL(asset, absoluteBase).href;
+const imageCache = new Map<string, Promise<HTMLImageElement>>();
+
+/** Loads (and caches) an icon; optionally recolors SVG fill / stroke attributes. */
+function loadIcon(layer: IconLayer): Promise<HTMLImageElement> {
+	const url = getAssetUrl(layer.src);
+	const key = `${url}|${layer.fill ?? ""}|${layer.stroke ?? ""}`;
+	let cached = imageCache.get(key);
+	if (!cached) {
+		cached = (async () => {
+			if (!layer.fill && !layer.stroke) return loadImage(url);
+			let svg = await (await fetch(url)).text();
+			if (layer.fill)
+				svg = svg.replace(/fill="[^"]*"/g, `fill="${layer.fill}"`);
+			if (layer.stroke)
+				svg = svg.replace(/stroke="[^"]*"/g, `stroke="${layer.stroke}"`);
+			const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+			return loadImage(dataUrl);
+		})();
+		cached.catch(() => imageCache.delete(key));
+		imageCache.set(key, cached);
+	}
+	return cached;
 }
 
-export const IconPath = {
-	SETTINGS: getAssetUrl("settings.svg"),
-	PENCIL: getAssetUrl("pencil.svg"),
-	APPWINDOW: getAssetUrl("app-window.svg"),
-	LU: getAssetUrl("lu.svg"),
-	DAPR: getAssetUrl("dapr.svg"),
-} as const;
+function anchorPoint(
+	ctx: CanvasRenderingContext2D,
+	anchor: Anchor = "tl",
+	x = 0,
+	y = 0,
+): [number, number] {
+	const { width: w, height: h } = ctx.canvas;
+	switch (anchor) {
+		case "tr":
+			return [w - x, y];
+		case "bl":
+			return [x, h - y];
+		case "br":
+			return [w - x, h - y];
+		case "center":
+			return [w / 2 + x, h / 2 + y];
+		default:
+			return [x, y];
+	}
+}
 
+const cornerSign: Record<Corner, [number, number]> = {
+	tl: [1, 1],
+	tr: [-1, 1],
+	bl: [1, -1],
+	br: [-1, -1],
+};
+
+function drawTriangle(ctx: CanvasRenderingContext2D, layer: TriangleLayer) {
+	const corner = layer.corner ?? "tl";
+	const size = layer.size ?? 180;
+	const [cx, cy] = anchorPoint(ctx, corner);
+	const [sx, sy] = cornerSign[corner];
+	ctx.fillStyle = layer.color;
+	ctx.beginPath();
+	ctx.moveTo(cx, cy);
+	ctx.lineTo(cx + sx * size, cy);
+	ctx.lineTo(cx, cy + sy * size);
+	ctx.closePath();
+	ctx.fill();
+}
+
+function transformTo(
+	ctx: CanvasRenderingContext2D,
+	layer: IconLayer | TextLayer,
+) {
+	const [px, py] = anchorPoint(ctx, layer.anchor, layer.x, layer.y);
+	ctx.translate(px, py);
+	if (layer.rotate) ctx.rotate((layer.rotate * Math.PI) / 180);
+}
+
+function drawIcon(
+	ctx: CanvasRenderingContext2D,
+	layer: IconLayer,
+	icon: HTMLImageElement,
+) {
+	const boxW = layer.width ?? layer.size ?? 64;
+	const boxH = layer.height ?? layer.size ?? 64;
+	const iw = icon.naturalWidth || boxW;
+	const ih = icon.naturalHeight || boxH;
+	const scale = Math.min(boxW / iw, boxH / ih);
+	const w = iw * scale;
+	const h = ih * scale;
+	transformTo(ctx, layer);
+	ctx.drawImage(icon, -w / 2, -h / 2, w, h);
+}
+
+function drawText(ctx: CanvasRenderingContext2D, layer: TextLayer) {
+	ctx.fillStyle = layer.color ?? "#fff";
+	ctx.font = layer.font ?? "bold 28px sans-serif";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	transformTo(ctx, layer);
+	ctx.fillText(layer.text, 0, 0);
+}
+
+/**
+ * Draws all layers of an overlay in order.
+ * Icons are loaded first; the actual drawing is fully synchronous so that
+ * concurrent calls on the same canvas can't interleave their save/transform/restore.
+ * `isCurrent` lets the caller drop a draw that became stale while icons were loading.
+ */
 export async function drawOverlay(
 	ctx: CanvasRenderingContext2D,
-	overlay: OverlayType,
+	overlay: OverlayDef | undefined,
+	isCurrent: () => boolean = () => true,
 ) {
-	if (overlay === OverlayType.APP) {
-		ctx.save();
-		ctx.fillStyle = "rgba(34, 221, 202,1)";
-		ctx.beginPath();
-		ctx.moveTo(0, 0);
-		ctx.lineTo(180, 0);
-		ctx.lineTo(0, 180);
-		ctx.closePath();
-		ctx.fill();
-
-		try {
-			const icon = await loadImage(IconPath.APPWINDOW);
-			const iconSize = 92;
-			const centroidX = (0 + 180 + 0) / 3;
-			const centroidY = (0 + 0 + 180) / 3;
-			ctx.save();
-			ctx.translate(centroidX, centroidY);
-			ctx.rotate(-Math.PI / 4);
-			ctx.drawImage(icon, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
-			ctx.restore();
-		} catch {}
-	} else if (overlay === OverlayType.MAINTENANCE) {
-		ctx.save();
-		ctx.fillStyle = "rgba(227, 36, 42, 1)";
-		ctx.beginPath();
-		ctx.moveTo(0, 0);
-		ctx.lineTo(180, 0);
-		ctx.lineTo(0, 180);
-		ctx.closePath();
-		ctx.fill();
-
-		try {
-			const icon = await loadImage(IconPath.SETTINGS);
-			const iconSize = 92;
-			ctx.save();
-			ctx.drawImage(icon, 10, 10, iconSize, iconSize);
-			ctx.restore();
-		} catch {}
-	} else if (overlay === OverlayType.EDIT) {
-		ctx.save();
-		ctx.fillStyle = "rgba(242, 237, 231, 1)";
-		ctx.beginPath();
-		ctx.moveTo(0, 0);
-		ctx.lineTo(180, 0);
-		ctx.lineTo(0, 180);
-		ctx.closePath();
-		ctx.fill();
-
-		try {
-			const icon = await loadImage(IconPath.PENCIL);
-			const iconSize = 92;
-			ctx.save();
-			ctx.drawImage(icon, 10, 10, iconSize, iconSize);
-			ctx.restore();
-		} catch {}
-	} else if (overlay === OverlayType.LU) {
-		try {
-			const icon = await loadImage(IconPath.LU);
-
-			const maxW = 108;
-			const maxH = 92;
-
-			// intrinsic size fallbacks
-			const iw = icon.naturalWidth || icon.width || maxW;
-			const ih = icon.naturalHeight || icon.height || maxH;
-
-			// scale to fit while preserving aspect ratio
-			const scale = Math.min(maxW / iw, maxH / ih, 1);
-			const w = Math.round(iw * scale);
-			const h = Math.round(ih * scale);
-
-			// position (left padding 5, vertically centered inside maxH)
-			const x = 16;
-			const y = 5;
-
-			ctx.save();
-			ctx.drawImage(icon, x, y, w, h);
-			ctx.restore();
-		} catch {}
-	} else if (overlay === OverlayType.DAPR) {
-		ctx.save();
-		ctx.fillStyle = "rgba(255, 215, 0,1)";
-		ctx.beginPath();
-		ctx.moveTo(0, 0);
-		ctx.lineTo(180, 0);
-		ctx.lineTo(0, 180);
-		ctx.closePath();
-		ctx.fill();
-
-		try {
-			const icon = await loadImage(IconPath.DAPR);
-			const iconSize = 72;
-			const centroidX = (0 + 180 + 0) / 3;
-			const centroidY = (0 + 0 + 180) / 3;
-			ctx.save();
-			ctx.translate(centroidX, centroidY);
-			ctx.rotate(-Math.PI / 4);
-			ctx.drawImage(icon, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
-			ctx.restore();
-		} catch {}
-	} else if (overlay === OverlayType.APP_TEXT) {
-		ctx.save();
-		ctx.fillStyle = "rgba(34, 221, 202,1)";
-		ctx.beginPath();
-		ctx.moveTo(0, 0);
-		ctx.lineTo(180, 0);
-		ctx.lineTo(0, 180);
-		ctx.closePath();
-		ctx.fill();
-
-		ctx.fillStyle = "#fff";
-		ctx.font = "bold 28px sans-serif";
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
-		ctx.translate(60, 60);
-		ctx.rotate(-Math.PI / 4);
-		ctx.fillText("GeoApp", 0, 0);
-		ctx.restore();
-	} else if (overlay === OverlayType.MAINTENANCE2) {
-		ctx.save();
-		ctx.fillStyle = "rgba(227, 36, 42, 1)";
-		ctx.beginPath();
-		ctx.moveTo(0, 0);
-		ctx.lineTo(180, 0);
-		ctx.lineTo(0, 180);
-		ctx.closePath();
-		ctx.fill();
-
-		ctx.fillStyle = "#fff";
-		ctx.font = "bold 28px sans-serif";
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
-		ctx.translate(60, 60);
-		ctx.rotate(-Math.PI / 4);
-		ctx.fillText("GeoApp", 0, 0);
-		ctx.restore();
-
-		ctx.save();
-		ctx.fillStyle = "rgba(227, 36, 42, 1)";
-		ctx.beginPath();
-		ctx.moveTo(ctx.canvas.width, ctx.canvas.height);
-		ctx.lineTo(ctx.canvas.width - 180, ctx.canvas.height);
-		ctx.lineTo(ctx.canvas.width, ctx.canvas.height - 180);
-		ctx.closePath();
-		ctx.fill();
-
-		ctx.fillStyle = "#fff";
-		ctx.font = "bold 28px sans-serif";
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
-		ctx.translate(ctx.canvas.width - 60, ctx.canvas.height - 60);
-		ctx.rotate(-Math.PI / 4);
-		ctx.fillText("Betrieb", 0, 0);
-		ctx.restore();
-
-		try {
-			const svgPath = "/settings.svg";
-			const res = await fetch(svgPath);
-			const svgText = await res.text();
-			const coloredSvg = svgText.replace(/fill="none"/g, 'fill="#e3242a"');
-			const svgBlob = new Blob([coloredSvg], { type: "image/svg+xml" });
-			const url = URL.createObjectURL(svgBlob);
+	if (!overlay) return;
+	const icons = new Map<OverlayLayer, HTMLImageElement>();
+	await Promise.all(
+		overlay.layers.map(async (layer) => {
+			if (layer.type !== "icon") return;
 			try {
-				const icon = await loadImage(url);
-				const centerX = ctx.canvas.width / 2;
-				const centerY = ctx.canvas.height / 2;
-				const iconSize = 192;
-				ctx.save();
-				ctx.drawImage(
-					icon,
-					centerX - iconSize / 2,
-					centerY - iconSize / 2,
-					iconSize,
-					iconSize,
-				);
-				ctx.restore();
-			} finally {
-				URL.revokeObjectURL(url);
+				icons.set(layer, await loadIcon(layer));
+			} catch (e) {
+				console.warn("Overlay icon failed to load", layer.src, e);
 			}
-		} catch {}
+		}),
+	);
+	if (!isCurrent()) return;
+
+	for (const layer of overlay.layers) {
+		ctx.save();
+		try {
+			if (layer.type === "triangle") drawTriangle(ctx, layer);
+			else if (layer.type === "text") drawText(ctx, layer);
+			else if (layer.type === "icon") {
+				const icon = icons.get(layer);
+				if (icon) drawIcon(ctx, layer, icon);
+			}
+		} finally {
+			ctx.restore();
+		}
 	}
 }

@@ -9,8 +9,13 @@ const clamp = (v: number, min: number, max: number) =>
 	Math.max(min, Math.min(max, v));
 
 export const ImagePreview = () => {
-	const { imageUrl, previewCanvasRef, overlay, originalImageRef, canvasSize } =
-		useAppContext();
+	const {
+		imageUrl,
+		previewCanvasRef,
+		overlayDef,
+		originalImageRef,
+		canvasSize,
+	} = useAppContext();
 	const imgRef = useRef<HTMLImageElement | null>(null);
 	const canvasWidth = canvasSize[0];
 	const canvasHeight = canvasSize[1];
@@ -26,7 +31,12 @@ export const ImagePreview = () => {
 	// For zoom slider
 	const [zoomPct, setZoomPct] = useState(100);
 
+	// Incremented on every draw; an overlay that finishes loading after a newer
+	// draw started must not paint onto the fresh canvas.
+	const drawIdRef = useRef(0);
+
 	const draw = useCallback(() => {
+		const drawId = ++drawIdRef.current;
 		const canvas = previewCanvasRef.current;
 		const ctx = canvas?.getContext("2d");
 		const img = imgRef.current;
@@ -53,8 +63,8 @@ export const ImagePreview = () => {
 		ctx.lineWidth = 1;
 		ctx.strokeRect(0.5, 0.5, canvasWidth - 1, canvasHeight - 1);
 
-		drawOverlay(ctx, overlay);
-	}, [overlay, canvasWidth, canvasHeight, previewCanvasRef]);
+		drawOverlay(ctx, overlayDef, () => drawId === drawIdRef.current);
+	}, [overlayDef, canvasWidth, canvasHeight, previewCanvasRef]);
 
 	// Load image and initialize transform
 	useEffect(() => {

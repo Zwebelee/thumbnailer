@@ -6,38 +6,38 @@ import { Label } from "@/components/ui/label.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { useAppContext } from "@/context/AppContext.tsx";
 
-type PresetSize = "400x400" | "600x400" | "custom";
+const CUSTOM = "custom";
+const key = (w: number, h: number) => `${w}x${h}`;
 
 export const CanvasSizePicker = () => {
-	const { canvasSize, setCanvasSize } = useAppContext();
+	const { canvasSize, setCanvasSize, config } = useAppContext();
+	const presets = config.canvasSizes;
 
-	const initialSelected =
-		canvasSize[0] === 400 && canvasSize[1] === 400
-			? "400x400"
-			: canvasSize[0] === 600 && canvasSize[1] === 400
-				? "600x400"
-				: "custom";
+	const matchPreset = (w: number, h: number) =>
+		presets.some((p) => p.width === w && p.height === h) ? key(w, h) : CUSTOM;
 
-	const [selected, setSelected] = useState<PresetSize>(initialSelected);
+	const [selected, setSelected] = useState<string>(
+		matchPreset(canvasSize[0], canvasSize[1]),
+	);
 	const [customW, setCustomW] = useState<string>(String(canvasSize[0]));
 	const [customH, setCustomH] = useState<string>(String(canvasSize[1]));
 
+	// keep local state in sync if canvasSize or presets change externally
 	useEffect(() => {
-		// keep local state in sync if canvasSize changes externally
-		if (canvasSize[0] === 400 && canvasSize[1] === 400) setSelected("400x400");
-		else if (canvasSize[0] === 600 && canvasSize[1] === 400)
-			setSelected("600x400");
-		else {
-			setSelected("custom");
-			setCustomW(String(canvasSize[0]));
-			setCustomH(String(canvasSize[1]));
+		const [w, h] = canvasSize;
+		const match = presets.some((p) => p.width === w && p.height === h);
+		setSelected(match ? key(w, h) : CUSTOM);
+		if (!match) {
+			setCustomW(String(w));
+			setCustomH(String(h));
 		}
-	}, [canvasSize]);
+	}, [canvasSize, presets]);
 
-	const applyPreset = (val: PresetSize) => {
+	const applyPreset = (val: string) => {
+		if (!val) return;
 		setSelected(val);
-		if (val === "400x400") setCanvasSize([400, 400]);
-		else if (val === "600x400") setCanvasSize([600, 400]);
+		const preset = presets.find((p) => key(p.width, p.height) === val);
+		if (preset) setCanvasSize([preset.width, preset.height]);
 		// if custom, don't change until user clicks Apply
 	};
 
@@ -46,7 +46,7 @@ export const CanvasSizePicker = () => {
 		const h = Math.max(1, Math.floor(Number(customH) || 0));
 		if (w > 0 && h > 0) {
 			setCanvasSize([w, h]);
-			setSelected("custom");
+			setSelected(CUSTOM);
 		}
 	};
 
@@ -56,20 +56,23 @@ export const CanvasSizePicker = () => {
 			<ToggleGroup
 				type="single"
 				value={selected}
-				onValueChange={(v) => applyPreset(v as PresetSize)}
+				onValueChange={applyPreset}
 				className="border"
 			>
-				<ToggleGroupItem className="cursor-pointer" value="400x400">
-					400 x 400
-				</ToggleGroupItem>
-				<ToggleGroupItem className="cursor-pointer" value="600x400">
-					600 x 400
-				</ToggleGroupItem>
-				<ToggleGroupItem className="cursor-pointer" value="custom">
+				{presets.map((p) => (
+					<ToggleGroupItem
+						key={key(p.width, p.height)}
+						className="cursor-pointer"
+						value={key(p.width, p.height)}
+					>
+						{p.label ?? `${p.width} x ${p.height}`}
+					</ToggleGroupItem>
+				))}
+				<ToggleGroupItem className="cursor-pointer" value={CUSTOM}>
 					Custom
 				</ToggleGroupItem>
 			</ToggleGroup>
-			{selected === "custom" && (
+			{selected === CUSTOM && (
 				<div
 					className={"flex flex-row border-2 border-gray-200 p-4 rounded-md"}
 				>

@@ -60,7 +60,10 @@ See [`public/custom/config.example.json`](public/custom/config.example.json) for
 ```bash
 git clone <your-company-remote> thumbnailer && cd thumbnailer
 git remote add upstream https://github.com/Zwebelee/thumbnailer.git
-# add public/custom/config.json + assets, commit, push
+# add public/custom/config.json + assets. public/custom/ is gitignored upstream,
+# so force-add new files once (afterwards they are tracked normally)
+git add -f public/custom/config.json public/custom/logo.svg
+git commit -m "company customization" && git push
 ```
 Updating:
 ```bash

@@ -25,3 +25,8 @@ dist-ssr
 
 # env
 .env*
+
+# company customization lives only in forks (force-add there: git add -f)
+public/custom/*
+!public/custom/README.md
+!public/custom/config.example.json

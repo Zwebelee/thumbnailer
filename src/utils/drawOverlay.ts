@@ -105,8 +105,11 @@ function transformTo(
 	if (layer.rotate) ctx.rotate((layer.rotate * Math.PI) / 180);
 }
 
-async function drawIcon(ctx: CanvasRenderingContext2D, layer: IconLayer) {
-	const icon = await loadIcon(layer);
+function drawIcon(
+	ctx: CanvasRenderingContext2D,
+	layer: IconLayer,
+	icon: HTMLImageElement,
+) {
 	const boxW = layer.width ?? layer.size ?? 64;
 	const boxH = layer.height ?? layer.size ?? 64;
 	const iw = icon.naturalWidth || boxW;
@@ -127,34 +130,42 @@ function drawText(ctx: CanvasRenderingContext2D, layer: TextLayer) {
 	ctx.fillText(layer.text, 0, 0);
 }
 
-async function drawLayer(ctx: CanvasRenderingContext2D, layer: OverlayLayer) {
-	ctx.save();
-	try {
-		if (layer.type === "triangle") drawTriangle(ctx, layer);
-		else if (layer.type === "icon") await drawIcon(ctx, layer);
-		else if (layer.type === "text") drawText(ctx, layer);
-	} catch (e) {
-		console.warn("Overlay layer failed", layer, e);
-	} finally {
-		ctx.restore();
-	}
-}
-
 /**
- * Draws all layers of an overlay in order. Icons are preloaded first so the
- * layer order is kept even though image loading is async.
+ * Draws all layers of an overlay in order.
+ * Icons are loaded first; the actual drawing is fully synchronous so that
+ * concurrent calls on the same canvas can't interleave their save/transform/restore.
+ * `isCurrent` lets the caller drop a draw that became stale while icons were loading.
  */
 export async function drawOverlay(
 	ctx: CanvasRenderingContext2D,
 	overlay: OverlayDef | undefined,
+	isCurrent: () => boolean = () => true,
 ) {
 	if (!overlay) return;
-	await Promise.allSettled(
-		overlay.layers
-			.filter((l): l is IconLayer => l.type === "icon")
-			.map((l) => loadIcon(l)),
+	const icons = new Map<OverlayLayer, HTMLImageElement>();
+	await Promise.all(
+		overlay.layers.map(async (layer) => {
+			if (layer.type !== "icon") return;
+			try {
+				icons.set(layer, await loadIcon(layer));
+			} catch (e) {
+				console.warn("Overlay icon failed to load", layer.src, e);
+			}
+		}),
 	);
+	if (!isCurrent()) return;
+
 	for (const layer of overlay.layers) {
-		await drawLayer(ctx, layer);
+		ctx.save();
+		try {
+			if (layer.type === "triangle") drawTriangle(ctx, layer);
+			else if (layer.type === "text") drawText(ctx, layer);
+			else if (layer.type === "icon") {
+				const icon = icons.get(layer);
+				if (icon) drawIcon(ctx, layer, icon);
+			}
+		} finally {
+			ctx.restore();
+		}
 	}
 }

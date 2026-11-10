@@ -28,10 +28,7 @@ public/custom/
   logo.svg       <- your assets, referenced as "custom/logo.svg"
 ```
 
-Config load order (later wins, objects are deep-merged, arrays are replaced):
-1. `src/config/defaultConfig.ts`: defaults + sample overlays
-2. `custom/config.json`: your customization (committed in your fork)
-3. `config.json` next to `index.html`: optional deploy-time override, e.g. edited directly on the server
+`custom/config.json` is loaded at runtime and merged over the defaults + sample overlays in `src/config/defaultConfig.ts` (objects are deep-merged, arrays are replaced). It is optional; without it the defaults are used.
 
 | Key | Description |
 |---|---|
@@ -74,3 +71,12 @@ Rules that keep merges conflict-free:
 - Only commit to `public/custom/`.
 - Generic fixes or features: open a PR upstream, then pull them back. Don't patch core files in the fork.
 - If something can't be configured yet, add the config option upstream instead of hardcoding it in the fork.
+
+## Upgrading from 1.x to 2.0
+2.0 moves all customization into config + `public/custom/`. When merging 2.0 into a fork:
+1. Move settings from `public/config.json` to `public/custom/config.json` (the root `config.json` is no longer read).
+2. Re-create custom overlays as config entries (`overlays` / `overlaysAppend`) instead of editing `drawOverlay.ts`. The LU overlay was removed from upstream.
+3. Move company assets (logos, icons) to `public/custom/` and add them once with `git add -f`.
+4. Delete `env/.env*`. The build uses a relative base, so no base URL is needed.
+5. `export.defaultSelectedBulkOverlays` now uses `"original"`, `"none"` or overlay ids (instead of `"a"`, `"b"`, …).
+6. `web.config` no longer contains the SPA rewrite rule (the app has no client-side routes).

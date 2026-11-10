@@ -92,7 +92,7 @@ export type AppConfig = {
 	overlays: OverlayDef[];
 };
 
-/** Shape of custom/config.json and config.json: everything optional */
+/** Shape of custom/config.json: everything optional */
 export type ConfigOverride = {
 	info?: Partial<InfoConfig>;
 	export?: Partial<ExportConfig>;

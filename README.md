@@ -17,7 +17,7 @@ npm install
 npm run dev
 npm run build   # output in dist/
 ```
-Base URL / title for the build: copy `env/.env.example` to `env/.env.production`.
+The build uses a relative base (`./`), so `dist/` can be deployed to any folder or subfolder (e.g. an IIS virtual directory) without rebuilding.
 
 ## Customization
 All company/project specific stuff lives in **`public/custom/`**:
@@ -68,6 +68,6 @@ git fetch upstream
 git merge upstream/main
 ```
 Rules that keep merges conflict-free:
-- Only commit to `public/custom/` (and your `env/` files, which are gitignored).
+- Only commit to `public/custom/`.
 - Generic fixes or features: open a PR upstream, then pull them back. Don't patch core files in the fork.
 - If something can't be configured yet, add the config option upstream instead of hardcoding it in the fork.
